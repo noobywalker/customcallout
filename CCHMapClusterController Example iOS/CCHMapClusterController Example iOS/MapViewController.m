@@ -13,14 +13,15 @@
 #import "ClusterAnnotationView.h"
 #import "SettingsViewController.h"
 #import "Settings.h"
-
+#import "ClusterAnnotation+CustomCallOutView.h"
 #import "CCHMapClusterAnnotation.h"
 #import "CCHMapClusterController.h"
 #import "CCHMapClusterControllerDelegate.h"
 #import "CCHCenterOfMassMapClusterer.h"
 #import "CCHNearCenterMapClusterer.h"
 #import "CCHFadeInOutMapAnimator.h"
-
+#import "DXAnnotationSettings.h"
+#import "ClusterAnnotation+CustomCallOutView.h"
 @interface MapViewController()<DataReaderDelegate, CCHMapClusterControllerDelegate, MKMapViewDelegate>
 
 @property (weak, nonatomic) IBOutlet MKMapView *mapView;
@@ -178,8 +179,11 @@
         if (clusterAnnotationView) {
             clusterAnnotationView.annotation = annotation;
         } else {
-            clusterAnnotationView = [[ClusterAnnotationView alloc] initWithAnnotation:annotation reuseIdentifier:identifier];
-            clusterAnnotationView.canShowCallout = YES;
+//            clusterAnnotationView = [[ClusterAnnotationView alloc] initWithAnnotation:annotation reuseIdentifier:identifier];
+            UIView *calloutView = [[[NSBundle mainBundle] loadNibNamed:@"myView" owner:self options:nil] firstObject];
+            clusterAnnotationView = [[ClusterAnnotationCustomCallOutView alloc]initWithAnnotation:annotation reuseIdentifier:identifier calloutView:calloutView settings:[DXAnnotationSettings defaultSettings]];
+            
+            clusterAnnotationView.canShowCallout = NO;
         }
         
         CCHMapClusterAnnotation *clusterAnnotation = (CCHMapClusterAnnotation *)annotation;
@@ -187,6 +191,7 @@
         clusterAnnotationView.blue = (clusterAnnotation.mapClusterController == self.mapClusterControllerBlue);
         clusterAnnotationView.uniqueLocation = clusterAnnotation.isUniqueLocation;
         annotationView = clusterAnnotationView;
+        NSLog(@"count %zd",clusterAnnotationView.count);
     }
     
     return annotationView;
@@ -201,6 +206,20 @@
         settingsViewController.completionBlock = ^(Settings *settings) {
             [self updateWithSettings:settings];
         };
+    }
+}
+
+- (void)mapView:(MKMapView *)mapView didDeselectAnnotationView:(MKAnnotationView *)view {
+    if ([view isKindOfClass:[ClusterAnnotationCustomCallOutView class]]) {
+        [((ClusterAnnotationCustomCallOutView *)view)hideCalloutView];
+        view.layer.zPosition = -1;
+    }
+}
+
+- (void)mapView:(MKMapView *)mapView didSelectAnnotationView:(MKAnnotationView *)view {
+    if ([view isKindOfClass:[ClusterAnnotationCustomCallOutView class]]) {
+        [((ClusterAnnotationCustomCallOutView *)view)showCalloutView];
+        view.layer.zPosition = 0;
     }
 }
 
